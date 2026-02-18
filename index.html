@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ramadanly - Asisten Ibadahmu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#10B981', // Emerald 500
+                        secondary: '#064E3B', // Emerald 900
+                        accent: '#F59E0B', // Amber 500
+                        dark: '#111827',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F3F4F6;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .active-prayer {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+        }
+        /* Hide scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col">
+
+    <nav class="bg-secondary text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-mosque text-accent text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-tight">Ramadanly</h1>
+            </div>
+            <div class="text-xs md:text-sm opacity-90 flex items-center gap-2">
+                <i class="fas fa-map-marker-alt text-accent"></i>
+                <span id="location-text">Mencari Lokasi...</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-6 flex-grow">
+        
+        <div class="bg-gradient-to-r from-secondary to-primary rounded-2xl shadow-xl p-6 mb-6 text-white text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 rounded-full bg-white opacity-10 blur-2xl"></div>
+            
+            <h2 class="text-sm font-medium uppercase tracking-wider opacity-90 mb-1">Menuju Waktu <span id="next-prayer-name">...</span></h2>
+            <div id="countdown" class="text-4xl md:text-6xl font-bold mb-2 font-mono">00:00:00</div>
+            <p id="current-date" class="text-sm opacity-80">...</p>
+            
+            <button onclick="toggleAudio()" id="audio-btn" class="mt-4 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full text-xs transition backdrop-blur-sm">
+                <i class="fas fa-volume-up mr-1"></i> Suara Adzan: ON
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl shadow-sm p-5 h-full">
+                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2 text-secondary">
+                        <i class="far fa-clock"></i> Jadwal Hari Ini
+                    </h3>
+                    <div id="prayer-list" class="space-y-3">
+                        <div class="animate-pulse flex space-x-4">
+                            <div class="flex-1 space-y-4 py-1">
+                                <div class="h-12 bg-gray-200 rounded"></div>
+                                <div class="h-12 bg-gray-200 rounded"></div>
+                                <div class="h-12 bg-gray-200 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                
+                <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg flex items-center gap-2 text-secondary">
+                            <i class="fas fa-check-circle"></i> Target Harian
+                        </h3>
+                        <span id="progress-percent" class="text-xs font-bold bg-green-100 text-green-800 px-2 py-1 rounded-full">0%</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="checklist-container">
+                        </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg flex items-center gap-2 text-secondary">
+                            <i class="fas fa-quran"></i> Progres Al-Qur'an
+                        </h3>
+                        <a href="https://quran.com" target="_blank" class="text-xs text-primary hover:underline">Baca Online <i class="fas fa-external-link-alt"></i></a>
+                    </div>
+                    
+                    <div class="bg-green-50 rounded-xl p-4 border border-green-100">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Terakhir Dibaca</label>
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <select id="surah-select" class="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm">
+                                <option value="">Pilih Surah...</option>
+                            </select>
+                            <div class="flex gap-2">
+                                <input type="number" id="ayah-input" placeholder="Ayat" class="w-20 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm">
+                                <button onclick="saveQuranProgress()" class="bg-secondary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary transition">
+                                    Simpan
+                                </button>
+                            </div>
+                        </div>
+                        <p id="last-read-display" class="mt-3 text-sm text-gray-600 italic">Belum ada data tersimpan.</p>
+                    </div>
+                </div>
+
+                <div class="bg-accent/10 border border-accent/20 rounded-2xl p-5 text-center">
+                    <i class="fas fa-quote-left text-accent mb-2 opacity-50"></i>
+                    <p class="text-sm md:text-base font-medium text-gray-700">"Barangsiapa berpuasa Ramadan karena iman dan mengharap pahala dari Allah, niscaya diampuni dosa-dosanya yang telah lalu."</p>
+                    <p class="text-xs text-gray-500 mt-2 font-bold">- HR. Bukhari & Muslim</p>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t mt-8 py-6 text-center text-sm text-gray-500">
+        <p>&copy; 2024 Ramadanly. Dibuat dengan <i class="fas fa-heart text-red-400"></i> untuk Ibadah.</p>
+    </footer>
+
+    <audio id="alarm-sound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=islamic-prayer-azan-11656.mp3"></audio>
+
+    <script>
+        // --- Configuration ---
+        const checklistItems = [
+            { id: 'puasa', label: 'Puasa Hari Ini' },
+            { id: 'subuh', label: 'Sholat Subuh' },
+            { id: 'zuhur', label: 'Sholat Zuhur' },
+            { id: 'ashar', label: 'Sholat Ashar' },
+            { id: 'maghrib', label: 'Sholat Maghrib' },
+            { id: 'isya', label: 'Sholat Isya' },
+            { id: 'tarawih', label: 'Sholat Tarawih' },
+            { id: 'tadarus', label: 'Tadarus Al-Quran' },
+            { id: 'sedekah', label: 'Sedekah Subuh/Harian' }
+        ];
+
+        let prayerTimes = {};
+        let userLocation = { lat: -6.2088, lng: 106.8456, name: "Jakarta" }; // Default
+        let audioEnabled = true;
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initDate();
+            initLocation();
+            renderChecklist();
+            loadQuranProgress();
+            fetchSurahList();
+            
+            // Interval for countdown
+            setInterval(updateCountdown, 1000);
+        });
+
+        // 1. Date & Time
+        function initDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const today = new Date().toLocaleDateString('id-ID', options);
+            document.getElementById('current-date').textContent = today;
+        }
+
+        // 2. Location & API
+        function initLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    userLocation.lat = position.coords.latitude;
+                    userLocation.lng = position.coords.longitude;
+                    userLocation.name = "Lokasi Anda";
+                    document.getElementById('location-text').textContent = "Lokasi Terdeteksi";
+                    fetchPrayerTimes();
+                }, () => {
+                    alert("Izin lokasi ditolak. Menggunakan default: Jakarta.");
+                    document.getElementById('location-text').textContent = "Jakarta (Default)";
+                    fetchPrayerTimes();
+                });
+            } else {
+                fetchPrayerTimes();
+            }
+        }
+
+        async function fetchPrayerTimes() {
+            try {
+                const date = new Date();
+                // Method 20 = Kemenag RI
+                const url = `https://api.aladhan.com/v1/timings/${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}?latitude=${userLocation.lat}&longitude=${userLocation.lng}&method=20`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if(data.code === 200) {
+                    prayerTimes = data.data.timings;
+                    renderSchedule();
+                }
+            } catch (error) {
+                console.error("Gagal mengambil jadwal", error);
+                document.getElementById('prayer-list').innerHTML = '<p class="text-red-500 text-center">Gagal memuat jadwal. Cek koneksi internet.</p>';
+            }
+        }
+
+        // 3. Render Schedule
+        function renderSchedule() {
+            const list = document.getElementById('prayer-list');
+            list.innerHTML = '';
+            
+            // Map API keys to Display names
+            const prayerMap = [
+                { key: 'Imsak', label: 'Imsak', icon: 'fa-cloud-moon' },
+                { key: 'Fajr', label: 'Subuh', icon: 'fa-sun' },
+                { key: 'Dhuhr', label: 'Zuhur', icon: 'fa-sun' },
+                { key: 'Asr', label: 'Ashar', icon: 'fa-cloud-sun' },
+                { key: 'Maghrib', label: 'Maghrib', icon: 'fa-moon' },
+                { key: 'Isha', label: 'Isya', icon: 'fa-star' }
+            ];
+
+            const now = new Date();
+            const currentTimeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            prayerMap.forEach(p => {
+                const time = prayerTimes[p.key];
+                const item = document.createElement('div');
+                item.className = `flex justify-between items-center p-4 rounded-xl transition bg-gray-50 hover:bg-gray-100 border border-gray-100`;
+                item.id = `prayer-row-${p.key}`;
+                
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                            <i class="fas ${p.icon} text-sm"></i>
+                        </div>
+                        <span class="font-medium">${p.label}</span>
+                    </div>
+                    <span class="font-bold font-mono text-lg">${time}</span>
+                `;
+                list.appendChild(item);
+            });
+            
+            highlightNextPrayer();
+        }
+
+        // 4. Countdown & Logic
+        function highlightNextPrayer() {
+            if (Object.keys(prayerTimes).length === 0) return;
+
+            const now = new Date();
+            const timeNow = now.getTime();
+            let nextPrayer = null;
+            let minDiff = Infinity;
+
+            const prayerMap = ['Imsak', 'Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+
+            prayerMap.forEach(key => {
+                const [hours, minutes] = prayerTimes[key].split(':');
+                const pDate = new Date();
+                pDate.setHours(hours, minutes, 0);
+                
+                let diff = pDate.getTime() - timeNow;
+                
+                // If diff is negative (time passed), ignore for "next", unless we want to handle tomorrow logic (simplified here)
+                if (diff > 0 && diff < minDiff) {
+                    minDiff = diff;
+                    nextPrayer = { key: key, time: pDate };
+                }
+            });
+
+            // Reset styles
+            document.querySelectorAll('[id^="prayer-row-"]').forEach(el => {
+                el.classList.remove('active-prayer');
+                el.classList.add('bg-gray-50');
+            });
+
+            if (nextPrayer) {
+                // Highlight UI
+                const activeRow = document.getElementById(`prayer-row-${nextPrayer.key}`);
+                if (activeRow) {
+                    activeRow.classList.remove('bg-gray-50');
+                    activeRow.classList.add('active-prayer');
+                }
+                
+                document.getElementById('next-prayer-name').textContent = nextPrayer.key;
+                
+                // Start Countdown
+                window.targetTime = nextPrayer.time;
+            } else {
+                // If all prayers passed today, target tomorrow Imsak (Simplified: just show "Besok")
+                document.getElementById('next-prayer-name').textContent = "Besok";
+                document.getElementById('countdown').textContent = "--:--:--";
+            }
+        }
+
+        function updateCountdown() {
+            if (!window.targetTime) return;
+
+            const now = new Date();
+            const diff = window.targetTime - now;
+
+            if (diff <= 0) {
+                document.getElementById('countdown').textContent = "00:00:00";
+                playAlarm();
+                // Refresh schedule slightly after time passes to reset
+                setTimeout(() => { window.location.reload(); }, 60000); 
+                return;
+            }
+
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('countdown').textContent = 
+                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // 5. Alarm System
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const btn = document.getElementById('audio-btn');
+            if(audioEnabled) {
+                btn.innerHTML = '<i class="fas fa-volume-up mr-1"></i> Suara Adzan: ON';
+                btn.classList.remove('opacity-50');
+            } else {
+                btn.innerHTML = '<i class="fas fa-volume-mute mr-1"></i> Suara Adzan: OFF';
+                btn.classList.add('opacity-50');
+            }
+        }
+
+        function playAlarm() {
+            if (audioEnabled) {
+                const audio = document.getElementById('alarm-sound');
+                audio.play().catch(e => console.log("Audio play blocked by browser policy"));
+                // Show Notification
+                if (Notification.permission === "granted") {
+                    new Notification("Waktu Sholat Telah Tiba!", { body: "Selamat menunaikan ibadah." });
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
+            }
+        }
+
+        // 6. Checklist System (LocalStorage)
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            const todayKey = `ramadanly_check_${new Date().toDateString()}`;
+            const savedData = JSON.parse(localStorage.getItem(todayKey)) || {};
+
+            container.innerHTML = '';
+            
+            checklistItems.forEach(item => {
+                const isChecked = savedData[item.id] || false;
+                const div = document.createElement('div');
+                div.className = `flex items-center p-3 rounded-lg border ${isChecked ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200'} cursor-pointer transition`;
+                div.onclick = (e) => {
+                    // Prevent triggering when clicking label directly if handled by input
+                    if (e.target.tagName !== 'INPUT') {
+                        const cb = div.querySelector('input');
+                        cb.checked = !cb.checked;
+                        toggleCheck(item.id, cb.checked);
+                    }
+                };
+
+                div.innerHTML = `
+                    <input type="checkbox" id="${item.id}" class="w-5 h-5 text-primary rounded focus:ring-primary border-gray-300" 
+                        ${isChecked ? 'checked' : ''} onchange="toggleCheck('${item.id}', this.checked)">
+                    <label for="${item.id}" class="ml-3 text-sm font-medium ${isChecked ? 'text-emerald-800 line-through' : 'text-gray-700'} pointer-events-none">${item.label}</label>
+                `;
+                container.appendChild(div);
+            });
+            updateProgress(savedData);
+        }
+
+        function toggleCheck(id, status) {
+            const todayKey = `ramadanly_check_${new Date().toDateString()}`;
+            let savedData = JSON.parse(localStorage.getItem(todayKey)) || {};
+            savedData[id] = status;
+            localStorage.setItem(todayKey, JSON.stringify(savedData));
+            renderChecklist(); // Re-render to update styles
+        }
+
+        function updateProgress(data) {
+            const total = checklistItems.length;
+            const checked = Object.values(data).filter(Boolean).length;
+            const percent = Math.round((checked / total) * 100);
+            document.getElementById('progress-percent').textContent = `${percent}%`;
+        }
+
+        // 7. Quran Tracker (API & LocalStorage)
+        async function fetchSurahList() {
+            try {
+                const res = await fetch('https://api.alquran.cloud/v1/surah');
+                const data = await res.json();
+                const select = document.getElementById('surah-select');
+                
+                data.data.forEach(surah => {
+                    const option = document.createElement('option');
+                    option.value = surah.number; // store number
+                    option.text = `${surah.number}. ${surah.englishName} (${surah.name})`;
+                    select.appendChild(option);
+                });
+                
+                // Restore selection if exists
+                const saved = JSON.parse(localStorage.getItem('ramadanly_quran_progress'));
+                if (saved) select.value = saved.surah;
+                
+            } catch (e) {
+                console.error("Gagal load surah", e);
+            }
+        }
+
+        function loadQuranProgress() {
+            const saved = JSON.parse(localStorage.getItem('ramadanly_quran_progress'));
+            if (saved) {
+                document.getElementById('ayah-input').value = saved.ayah;
+                document.getElementById('last-read-display').innerHTML = 
+                    `<i class="fas fa-bookmark text-primary"></i> Lanjut: Surah ke-${saved.surah}, Ayat ${saved.ayah}`;
+            }
+        }
+
+        function saveQuranProgress() {
+            const surah = document.getElementById('surah-select').value;
+            const ayah = document.getElementById('ayah-input').value;
+            
+            if (!surah || !ayah) return alert("Pilih Surah dan isi Ayat dulu ya!");
+            
+            localStorage.setItem('ramadanly_quran_progress', JSON.stringify({ surah, ayah }));
+            loadQuranProgress();
+            alert("Progres tersimpan! Semangat tadarusnya.");
+        }
+
+    </script>
+</body>
+</html>
